@@ -39,5 +39,56 @@ CHIP CPU {
         pc[15];          // address of next instruction
 
     PARTS:
-    // Put your code here:
+
+    // DECODE //
+
+    DMux(in=true,sel=instruction[15],a=Ainstruct,b=Cinstruct); 
+
+    And16(a=instruction, b=true, out[0]=j3, out[1]=j2, out[2]=j1, out[3]=d3, out[4]=d2, out[5]=d1, out[6]=NO, out[7]=F, out[8]=NY, out[9]=ZY, out[10]=NX, out[11]=ZX, out[12]=a,out[0..14]=out);
+              
+
+
+    //A Register //
+    And(a=Cinstruct,b=d1,out=Cd1);
+    Mux16(a=ALUout, b=instruction, sel=Ainstruct, out=AregIn );
+    Or(a=Ainstruct, b=Cd1, out=Aload);
+    ARegister(in=AregIn, load=Aload, out=AregOut,out[0..14]=addressM);
+
+    //D Register //
+
+    And(a=d2, b=Cinstruct, out=Dload);
+    DRegister(in=ALUout, load=Dload, out=DregOut);
+
+   //Areg InM Mux //
+
+    Mux16(a=AregOut, b=inM, sel=a, out=AM);
+
+    //AlU //
+
+    ALU(x=DregOut,y=AM,zx=ZX,nx=NX,zy=ZY,ny=NY,f=F,no=NO,out=ALUout,out=outM,zr=zr,ng=ng);
+
+    //WriteM//
+
+    And(a=d3,b=Cinstruct,out=writeM);
+
+    //Jump //
+    Or(a=zr,b=ng,out=neg);
+    Not(in=neg,out=pos);
+
+    And(a=j1,b=ng,out=jlt);
+    And(a=j2,b=zr,out=jeq);
+    And(a=j3,b=pos,out=jgt);
+
+    Or(a=jlt, b=jeq, out=jle);
+    Or(a=jle,b=jgt,out=jumping);
+    And(a=jumping,b=Cinstruct,out=JMP);
+    
+
+
+
+    //PC//
+
+    PC(in=AregOut, load=JMP, inc=true, reset=reset,out[0..14]=pc);
+
+
 }
